@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 #call this code from the directory that contains the data
 
-outdir='data2020'
+outdir='2020data'
 os.makedirs('../'+outdir)
 
 columns = ['glucose', 'finger', 'basal', 'hr', 'gsr','carbs','temp_basal', 
