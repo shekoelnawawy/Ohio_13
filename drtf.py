@@ -10,6 +10,15 @@ import joblib
 import numpy as np
 import pandas as pd
 
+# Nawawy's start
+from URET.uret.utils.config import process_config_file
+cf = "URET/brute.yml"
+
+def feature_extractor(x):
+    return x
+
+# Nawawy's end
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
 
@@ -227,12 +236,32 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	traingen = data(batch_size, backcast_length, forecast_length,train)
 	valgen = data(batch_size, backcast_length, forecast_length,val)
-	testgen = ordered_data(batch_size, backcast_length, forecast_length,test)
+	# testgen = ordered_data(batch_size, backcast_length, forecast_length,test)
 	
 	net = network(device,backcast_length,forecast_length,NUMBLOCKS)
 	optimiser = optim.Adam(net.parameters(),lr=.0002)
 
 	fit(net, optimiser, traingen,valgen,mydir, device,basedir)
+
+	# Nawawy's start
+	# CALL URET HERE
+	explorer = process_config_file(cf, net, feature_extractor=feature_extractor, input_processor_list=[])
+	patient0 = np.array(explorer.explore(test[0]))
+	patient1 = np.array(explorer.explore(test[1]))
+	patient2 = np.array(explorer.explore(test[2]))
+	patient3 = np.array(explorer.explore(test[3]))
+	patient4 = np.array(explorer.explore(test[4]))
+	patient5 = np.array(explorer.explore(test[5]))
+	test = []
+	test.append(patient0)
+	test.append(patient1)
+	test.append(patient2)
+	test.append(patient3)
+	test.append(patient4)
+	test.append(patient5)
+	testgen = ordered_data(batch_size, backcast_length, forecast_length, test)
+	# Nawawy's end
+
 	eval(net, optimiser, testgen,mydir,  device)
 
 
