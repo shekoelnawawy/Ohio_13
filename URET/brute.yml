@@ -1,0 +1,52 @@
+explorer_params:
+    type: "BeamSearch"
+    predict_function_name: "net" #Name of function to get output prediction. Ohio_13 drtf.py line 336
+    init_args:
+        scoring_alg: "model_loss"
+        search_size: 5
+        max_depth: 2
+ranker_params:
+    type: "BruteForce"
+    init_args:
+        multi_feature_input: True
+transformer_params:
+    - data_type: "category"
+      feature_index: 
+          - 6 #missing
+      init_args:
+          input_constraints: {}
+          subtransformer_args:
+              - name: "CategoryModifier"
+                init_args:
+                    categories: [0,1]
+    - data_type: "number"
+      feature_index: 
+          - 0 #glucose
+          - 5 #finger
+      init_args:
+          input_constraints: {"bound": (40, 400, 0)}
+          subtransformer_args:
+              - name: "Increment"
+    - data_type: "number"
+      feature_index: 
+          - 1 #bolus dose
+      init_args:
+          input_constraints: {"bound": (0, 10, 0)}
+          subtransformer_args:
+              - name: "increment"
+    - data_type: "number"
+      feature_index: 
+          - 2 #carbs meal
+      init_args:
+          input_constraints: {"bound": (0, 100, 0)}
+          subtransformer_args:
+              - name: "increment"
+
+#    - data_type: "number"
+#      feature_index:
+#          - 3 #t1 sin
+#          - 4 #t2 cos
+#      init_args:
+#          input_constraints: {"bound": (-1, 1, 0)}
+#          subtransformer_args:
+#              - name: "increment"
