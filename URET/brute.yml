@@ -24,21 +24,21 @@ transformer_params:
           - 0 #glucose
           - 5 #finger
       init_args:
-          input_constraints: {"bounds": {"min":40, "max":400, "method":0"}}
+          input_constraints: {"bounds": {"lower":40, "upper":400, "method":0"}}
           subtransformer_args:
               - name: "Increment"
     - data_type: "number"
       feature_index: 
           - 1 #bolus dose
       init_args:
-          input_constraints: {"bounds": {"min":0, "max":10, "method":0"}}
+          input_constraints: {"bounds": {"lower":0, "upper":10, "method":0"}}
           subtransformer_args:
               - name: "increment"
     - data_type: "number"
       feature_index: 
           - 2 #carbs meal
       init_args:
-          input_constraints: {"bounds": {"min":0, "max":100, "method":0"}}
+          input_constraints: {"bounds": {"lower":0, "upper":100, "method":0"}}
           subtransformer_args:
               - name: "increment"
 
@@ -47,6 +47,6 @@ transformer_params:
 #          - 3 #t1 sin
 #          - 4 #t2 cos
 #      init_args:
-#          input_constraints: {"bounds": {"min":-1, "max":1, "method":0"}}
+#          input_constraints: {"bounds": {"lower":-1, "upper":1, "method":0"}}
 #          subtransformer_args:
 #              - name: "increment"
