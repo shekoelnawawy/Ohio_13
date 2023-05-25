@@ -54,7 +54,7 @@ class NumberTransformer(Transformer):
                 elif input_constraints[key]["type"] == "rel" and abs(input_constraints[key]["value"]) > 1:
                     raise ValueError("Illegal value. With relative eps, the value must be in the range (0,1]")
 
-        input_constraints["eps"]["value"] = abs(input_constraints["eps"]["value"])
+                input_constraints["eps"]["value"] = abs(input_constraints["eps"]["value"])
 
         for args in subtransformer_args:
             if "init_args" in args.keys():
