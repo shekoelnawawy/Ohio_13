@@ -1,6 +1,6 @@
 explorer_params:
     type: "BeamSearch"
-    predict_function_name: "net" #Name of function to get output prediction. Ohio_13 drtf.py line 336
+    predict_function_name: "forward" #Name of function to get output prediction. Ohio_13 drtf.py line 336
     init_args:
         scoring_alg: "model_loss"
         search_size: 5
@@ -10,15 +10,15 @@ ranker_params:
     init_args:
         multi_feature_input: True
 transformer_params:
-    - data_type: "category"
-      feature_index: 
-          - 6 #missing
-      init_args:
-          input_constraints: {}
-          subtransformer_args:
-              - name: "CategoryModifier"
-                init_args:
-                    categories: [0,1]
+#    - data_type: "category"
+#      feature_index:
+#          - 6 #missing
+#      init_args:
+#          input_constraints: {}
+#          subtransformer_args:
+#              - name: "CategoryModifier"
+#                init_args:
+#                    categories: [0,1]
     - data_type: "number"
       feature_index: 
           - 0 #glucose
