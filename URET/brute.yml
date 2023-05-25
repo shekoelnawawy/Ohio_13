@@ -33,14 +33,14 @@ transformer_params:
       init_args:
           input_constraints: {"bounds": {"lower":0, "upper":10, "method":0"}}
           subtransformer_args:
-              - name: "increment"
+              - name: "Increment"
     - data_type: "number"
       feature_index: 
           - 2 #carbs meal
       init_args:
           input_constraints: {"bounds": {"lower":0, "upper":100, "method":0"}}
           subtransformer_args:
-              - name: "increment"
+              - name: "Increment"
 
 #    - data_type: "number"
 #      feature_index:
@@ -49,4 +49,4 @@ transformer_params:
 #      init_args:
 #          input_constraints: {"bounds": {"lower":-1, "upper":1, "method":0"}}
 #          subtransformer_args:
-#              - name: "increment"
+#              - name: "Increment"
