@@ -237,7 +237,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	traingen = data(batch_size, backcast_length, forecast_length,train)
 	valgen = data(batch_size, backcast_length, forecast_length,val)
-	# testgen = ordered_data(batch_size, backcast_length, forecast_length,test)
+	testgen = ordered_data(batch_size, backcast_length, forecast_length,test)
 	
 	net = network(device,backcast_length,forecast_length,NUMBLOCKS)
 	optimiser = optim.Adam(net.parameters(),lr=.0002)
@@ -247,12 +247,21 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	# Nawawy's start
 	# CALL URET HERE
 	explorer = process_config_file(cf, net, feature_extractor=feature_extractor, input_processor_list=[])
-	patient0 = np.array(explorer.explore(test[0]))
-	patient1 = np.array(explorer.explore(test[1]))
-	patient2 = np.array(explorer.explore(test[2]))
-	patient3 = np.array(explorer.explore(test[3]))
-	patient4 = np.array(explorer.explore(test[4]))
-	patient5 = np.array(explorer.explore(test[5]))
+	index = 0
+	while (True):
+		x, target, done = next(testgen)
+		if index == 0:
+			allPatients = x.reshape(-1, backcast_length*nv)
+		else:
+			allPatients = np.append(allPatients, x.reshape(-1, backcast_length*nv))
+		index = index + 1
+		if done:
+			break
+
+	allPatients = allPatients.reshape(-1, backcast_length*nv)
+
+	allPatients = np.array(explorer.explore(allPatients))
+
 	test = []
 	test.append(patient0)
 	test.append(patient1)
