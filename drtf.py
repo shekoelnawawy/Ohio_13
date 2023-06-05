@@ -247,6 +247,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	# Nawawy's start
 	# CALL URET HERE
 	explorer = process_config_file(cf, net, feature_extractor=feature_extractor, input_processor_list=[])
+	explorer.scoring_function = mse
 	index = 0
 	while (True):
 		x, target, done = next(testgen)
