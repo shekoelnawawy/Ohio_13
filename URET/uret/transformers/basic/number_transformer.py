@@ -200,8 +200,9 @@ class NumberTransformer(Transformer):
                 if (method == 4 or method == 5) and self.input_constraints["bounds"].get("upper") is not None:
                     upper_bound = max(upper_bound, self.input_constraints["bounds"].get("upper"))
                 
-
-            if (transformation_effect > 0 and x >= upper_bound) or (transformation_effect < 0 and x <= lower_bound):
+            # Nawawy's start
+            if (transformation_effect > 0 and np.greater_equal(x, upper_bound).any()) or (transformation_effect < 0 and np.less_equal(x, lower_bound).any()):
+            # Nawawy's end
                 return False, []
 
         return True, action_args

@@ -84,7 +84,12 @@ class BeamSearchGraphExplorer(GraphExplorer):
         indicies, transformers, transformer_params, samples_next, new_transformation_records, scores = zip(
             *edge_transform_estimates
         )
-
+        # Nawawy's start
+        y = []
+        for t in scores:
+            y.append(t.cpu().detach().item())
+        scores = np.array(y)
+        # Nawawy's end
         ranked_edge_list = np.argsort(scores)  # Score is the lower, the better.
         rank = 0
         returned_edge_count = 0

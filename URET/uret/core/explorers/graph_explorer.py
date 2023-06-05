@@ -148,7 +148,10 @@ class GraphExplorer(ABC):
             records = []
 
         for i, sample in enumerate(tqdm.tqdm(x)):
-            original_pred = self.model_predict(self.feature_extractor(sample))
+            # Nawawy's start
+            sample = sample.reshape(1,12,7)
+            original_pred,_,_,_,_ = self.model_predict(self.feature_extractor(sample))
+            # Nawawy's end
             if len(np.shape(original_pred)) == 2:
                 original_pred = original_pred[0]
 
@@ -161,7 +164,9 @@ class GraphExplorer(ABC):
                 score_input = original_pred
             else:
                 score_input = target_features[i]
-
+            # Nawawy's start
+            sample = sample.reshape(12 * 7)
+            # Nawawy's end
             for sample_next, transformation_record, _ in self.search(sample, score_input):
 
                 # Score the current sample
