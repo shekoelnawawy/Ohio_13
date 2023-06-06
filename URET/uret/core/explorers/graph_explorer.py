@@ -182,18 +182,26 @@ class GraphExplorer(ABC):
                     best_score = score
                     break
 
+                # Nawawy's start
+                sample_next = sample_next.reshape(1, 12, 7)
                 # For all loss types, we can early exit if an adversarial example is found
-                new_prediction = self.model_predict(self.feature_extractor(sample_next))
+                new_prediction,_,_,_,_ = self.model_predict(self.feature_extractor(sample_next))
+                # Nawawy's end
                 if len(np.shape(new_prediction)) == 2:
                     new_prediction = new_prediction
 
-                if self.target_label is not None and np.argmax(new_prediction) == self.target_label:
+                # Nawawy's start
+                if self.target_label is not None and np.argmax(new_prediction.cpu().detach().numpy()) == self.target_label:
+                # Nawawy's end
                     best_sample = sample_next
                     best_score = score
                     if return_record:
                         best_record = transformation_record
                     break
-                elif np.argmax(new_prediction) != np.argmax(original_pred):
+
+                # Nawawy's start
+                elif np.argmax(new_prediction.cpu().detach().numpy()) != np.argmax(original_pred.cpu().detach().numpy()):
+                # Nawawy's end
                     best_sample = sample_next
                     best_score = score
                     if return_record:
