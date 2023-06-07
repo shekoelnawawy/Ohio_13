@@ -261,16 +261,11 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	allPatients = allPatients.reshape(-1, backcast_length*nv)
 
-	allPatients = np.array(explorer.explore(allPatients))
+	explore_params = [allPatients, backcast_length, nv]
+	allPatients = np.array(explorer.explore(explore_params))
 
-	test = []
-	test.append(patient0)
-	test.append(patient1)
-	test.append(patient2)
-	test.append(patient3)
-	test.append(patient4)
-	test.append(patient5)
-	testgen = ordered_data(batch_size, backcast_length, forecast_length, test)
+	allPatients = allPatients.reshape((1, backcast_length, nv))
+	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients)
 	# Nawawy's end
 
 	eval(net, optimiser, testgen,mydir,  device)
