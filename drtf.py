@@ -12,7 +12,7 @@ import pandas as pd
 
 # Nawawy's start
 from URET.uret.utils.config import process_config_file
-ensembleTestgen
+ensembleTestgen = 0
 cf = "URET/brute.yml"
 
 def feature_extractor(x):
