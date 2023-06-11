@@ -12,6 +12,7 @@ import pandas as pd
 
 # Nawawy's start
 from URET.uret.utils.config import process_config_file
+ensembleTestgen
 cf = "URET/brute.yml"
 
 def feature_extractor(x):
@@ -150,7 +151,7 @@ def main():
 		#loop through every batch in training data.
 		batch=0
 		while(True):
-			x,target,done=next(testgen)
+			x,target,done=next(ensembleTestgen)
 			totalpoints = totalpoints+x.shape[0]
 			#loop through each directory and load predicions
 			preds=[]
@@ -160,12 +161,34 @@ def main():
 				del temp
 			#take median
 			preds=np.array(preds)
+			# Nawawy's start
+			for i in range(len(preds)):
+				if (len(preds[i]) < BATCHSIZE):
+					preds[i] = np.pad(preds[i], ((0, BATCHSIZE - len(preds[i])), (0, 0)), mode='constant', constant_values=0)
+				if i == 0:
+					temp_preds = preds[i]
+				else:
+					temp_preds = np.append(temp_preds, preds[i])
+
+			preds = temp_preds.reshape((len(preds), BATCHSIZE, horizon))
+			# Nawawy's end
 			median=np.median(preds,axis=0)
+
+			# Nawawy's start
+			if (len(target) < BATCHSIZE):
+				target = np.pad(target, ((0, BATCHSIZE - len(target)), (0, 0)), mode='constant', constant_values=0)
+			# Nawawy's end
+
 			#get losses
 			losses.append(mse_cpu(target, median)*x.shape[0])
 			rmselosses.append(mse_lastpointonly_cpu(target, median)*x.shape[0])
 			maes.append(mae_lastpointonly_cpu(target, median)*x.shape[0])
-			
+
+			# Nawawy's start
+			if (len(x) < BATCHSIZE):
+				x = np.pad(x, ((0, BATCHSIZE - len(x)), (0, 0), (0, 0)), mode='constant', constant_values=0)
+			# Nawawy's end
+
 			#event losses- will get MSE of last point
 			ee,te=event(target,median,x[:,:,0])
 			totale+=te
@@ -266,6 +289,10 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	allPatients = allPatients.reshape((1, backcast_length, nv))
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients)
+
+	if backcast_length == 12:
+		global ensembleTestgen
+		ensembleTestgen = testgen
 	# Nawawy's end
 
 	eval(net, optimiser, testgen,mydir,  device)
