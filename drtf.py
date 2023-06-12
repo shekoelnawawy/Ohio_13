@@ -287,7 +287,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	explore_params = [allPatients, backcast_length, nv]
 	allPatients = np.array(explorer.explore(explore_params))
 
-	allPatients = allPatients.reshape((1, backcast_length, nv))
+	allPatients = allPatients.reshape((1, len(allPatients)*backcast_length, nv))
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients)
 
 	if backcast_length == 12:
