@@ -59,8 +59,8 @@ transformer_params:
       init_args:
           input_constraints: #{"bounds": {"lower":40, "upper":400, "method":0"}}
                 bounds:
-                    lower: 40
-                    upper: 400
+                    lower: 130
+                    upper: 200
                     method: 0
           subtransformer_args:
               - name: "Increment"
