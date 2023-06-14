@@ -16,7 +16,7 @@ ensembleTestgen = 0
 cf = "URET/brute.yml"
 
 def feature_extractor(x):
-	device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device('cpu')
+	device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 	return torch.tensor(x, dtype=torch.float).to(device)
 
 # Nawawy's end
@@ -252,7 +252,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	joblib.dump(paramlist,mydir+'/params.pkl')
 	
 	pin_memory=True
-	device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device('cpu')
+	device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 	
 
 	batch_size = BATCHSIZE
