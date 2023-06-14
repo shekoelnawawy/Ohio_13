@@ -283,6 +283,8 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 			break
 
 	allPatients = allPatients.reshape(-1, backcast_length*nv)
+
+	allPatients = allPatients[0:100]
 	explore_params = [allPatients, backcast_length, nv]
 	allPatients = np.array(explorer.explore(explore_params))
 
