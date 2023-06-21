@@ -3,8 +3,8 @@ explorer_params:
     predict_function_name: "forward" #Name of function to get output prediction. Ohio_13 drtf.py line 336
     init_args:
         scoring_alg: "model_loss"
-        search_size: 5
-        max_depth: 2
+        search_size: 1
+        max_depth: 1
 ranker_params:
     type: "BruteForce"
     init_args:
@@ -59,8 +59,8 @@ transformer_params:
       init_args:
           input_constraints: #{"bounds": {"lower":40, "upper":400, "method":0"}}
                 bounds:
-                    lower: 130
-                    upper: 200
+                    lower: 40
+                    upper: 400
                     method: 0
           subtransformer_args:
               - name: "Increment"
@@ -140,3 +140,36 @@ transformer_params:
 #          input_constraints: {"bounds": {"lower":-1, "upper":1, "method":0"}}
 #          subtransformer_args:
 #              - name: "Increment"
+
+dependency_params: # Contains information on feature dependencies to enforce. Normally, this is used with multi-feature inputs
+    dependency_path: "default.py" #"<Name of *.py file in utils.dependencies that contains dependency functions. Defaults to 'defeault'>"
+    dependencies:
+        - name:
+            "missing_cgm" #"<Name of dependcy function>"
+        - args: # Fixed arguments to use when calling the dependencies. e.g. Feature indicies the function modifies/reads
+           indices: #"<arg value>"
+              - 6  #missing (t-12)
+              - 13 #missing (t-11)
+              - 20 #missing (t-10)
+              - 27 #missing (t-9)
+              - 34 #missing (t-8)
+              - 41 #missing (t-7)
+              - 48 #missing (t-6)
+              - 55 #missing (t-5)
+              - 62 #missing (t-4)
+              - 69 #missing (t-3)
+              - 76 #missing (t-2)
+              - 83 #missing (t-1)
+           dependency_indices: #"<arg value>"
+              - 0  #glucose (t-12)
+              - 7  #glucose (t-11)
+              - 14 #glucose (t-10)
+              - 21 #glucose (t-9)
+              - 28 #glucose (t-8)
+              - 35 #glucose (t-7)
+              - 42 #glucose (t-6)
+              - 49 #glucose (t-5)
+              - 56 #glucose (t-4)
+              - 63 #glucose (t-3)
+              - 70 #glucose (t-2)
+              - 77 #glucose (t-1)

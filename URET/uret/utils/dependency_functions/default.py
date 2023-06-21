@@ -15,3 +15,12 @@ def normalize(input_state, indices, dependency_indices):
             input_state[i] = input_state[i] / total_sum
 
     return input_state
+
+
+def missing_cgm(input_state, indices, dependency_indices):
+    for i in range(len(indices)):
+        if input_state[dependency_indices[i]] == 0:
+            input_state[indices[i]] = True
+        else:
+            input_state[indices[i]] = False
+    return input_state

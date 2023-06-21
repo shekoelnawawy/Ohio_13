@@ -110,7 +110,7 @@ def process_config_file(config_filepath, model, feature_extractor=None, input_pr
         dependencies = dependency_params.get("dependencies", [])
         if len(dependencies) > 0:
             dependency_path = (
-                "utils.dependency_functions." + dependency_params.get("dependency_path", "default").split(".")[0]
+                "uret.utils.dependency_functions." + dependency_params.get("dependency_path", "default").split(".")[0]
             )
             dependency_module = importlib.import_module(dependency_path)
             explorer_init_args["dependencies"] = []
