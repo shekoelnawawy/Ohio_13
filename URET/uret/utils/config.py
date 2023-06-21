@@ -109,15 +109,24 @@ def process_config_file(config_filepath, model, feature_extractor=None, input_pr
     if dependency_params is not None:
         dependencies = dependency_params.get("dependencies", [])
         if len(dependencies) > 0:
+            # Nawawy's start
             dependency_path = (
                 "uret.utils.dependency_functions." + dependency_params.get("dependency_path", "default").split(".")[0]
             )
+            # Nawawy's end
             dependency_module = importlib.import_module(dependency_path)
             explorer_init_args["dependencies"] = []
-            for d in dependencies:
-                d_func = getattr(dependency_module, d["name"])
-                explorer_init_args["dependencies"].append([d_func, d["args"]])
 
+
+            # Nawawy's start
+            d_func = getattr(dependency_module, dependencies[0]["name"])
+            d_args = dependencies[1]["args"]
+            explorer_init_args["dependencies"].append([d_func, d_args])
+            # for d in dependencies:
+            #     d_func = getattr(dependency_module, d["name"])
+            #     explorer_init_args["dependencies"].append([d_func, d["args"]])
+
+            # Nawawy's end
     if explorer_params["type"].replace("_", "").lower() in ["beam", "beamsearch", "beamsearchgraphexplorer"]:
         explorer_alg = BeamSearchGraphExplorer
     elif explorer_params["type"].replace("_", "").lower() in ["greedy", "greedysearch", "greedysearchgraphexplorer"]:
