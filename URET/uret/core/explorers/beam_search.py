@@ -63,6 +63,12 @@ class BeamSearchGraphExplorer(GraphExplorer):
         :param transformation_records: history of applied transformations.
         :param depth: current depth of search.
         """
+        # Nawawy's start
+        backcast = sample[1]
+        nv = sample[2]
+        sample = sample[0]
+        # Nawawy's end
+
         if depth >= self.max_depth:
             return
         if depth == 0:
@@ -73,9 +79,12 @@ class BeamSearchGraphExplorer(GraphExplorer):
             convert_back_to_list = True
             sample = np.array(sample)
 
+        # Nawawy's start
         edge_transform_estimates = self.ranking_algorithm.rank_edges(
-            sample, self.scoring_function, score_input, self.dependencies, transformation_records
+            [sample, backcast, nv], self.scoring_function, score_input, self.model_predict, self.feature_extractor,
+            self.dependencies, transformation_records
         )
+        # Nawawy's end
 
         # No actions are possible from current vertex
         if len(edge_transform_estimates) == 0:

@@ -3,33 +3,13 @@ explorer_params:
     predict_function_name: "forward" #Name of function to get output prediction. Ohio_13 drtf.py line 336
     init_args:
         scoring_alg: "model_loss"
-        search_size: 1
-        max_depth: 1
+        search_size: 5
+        max_depth: 2
 ranker_params:
     type: "BruteForce"
     init_args:
         multi_feature_input: True
 transformer_params:
-#    - data_type: "category"
-#      feature_index:
-#          - 6  #missing (t-12)
-#          - 13 #missing (t-11)
-#          - 20 #missing (t-10)
-#          - 27 #missing (t-9)
-#          - 34 #missing (t-8)
-#          - 41 #missing (t-7)
-#          - 48 #missing (t-6)
-#          - 55 #missing (t-5)
-#          - 62 #missing (t-4)
-#          - 69 #missing (t-3)
-#          - 76 #missing (t-2)
-#          - 83 #missing (t-1)
-#      init_args:
-#          input_constraints: {}
-#          subtransformer_args:
-#              - name: "CategoryModifier"
-#                init_args:
-#                    categories: [0,1]
     - data_type: "number"
       feature_index: 
           - 0  #glucose (t-12)
@@ -59,8 +39,8 @@ transformer_params:
       init_args:
           input_constraints: #{"bounds": {"lower":40, "upper":400, "method":0"}}
                 bounds:
-                    lower: 40
-                    upper: 400
+                    lower: 130
+                    upper: 499
                     method: 0
           subtransformer_args:
               - name: "Increment"
@@ -83,7 +63,7 @@ transformer_params:
           input_constraints: #{"bounds": {"lower":0, "upper":10, "method":0"}}
                 bounds:
                     lower: 0
-                    upper: 10
+                    upper: 25
                     method: 0
           subtransformer_args:
               - name: "Increment"
@@ -105,7 +85,7 @@ transformer_params:
           input_constraints: #{"bounds": {"lower":0, "upper":100, "method":0"}}
                 bounds:
                     lower: 0
-                    upper: 100
+                    upper: 175
                     method: 0
           subtransformer_args:
               - name: "Increment"

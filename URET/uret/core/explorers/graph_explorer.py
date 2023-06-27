@@ -135,6 +135,11 @@ class GraphExplorer(ABC):
         param target_features: If using feature loss, then this value contains the target features.
         param return_record: A boolean that if True will return the transformation record as well.
         """
+        # Nawawy's start
+        backcast = x[1]
+        nv = x[2]
+        x = x[0]
+        # Nawawy's end
 
         if self.scoring_alg == "feature_loss":
             if target_features is None:
@@ -147,14 +152,9 @@ class GraphExplorer(ABC):
         if return_record:
             records = []
 
-        # Nawawy's start
-        explore_params = x
-        x = explore_params[0]
-        # Nawawy's end
-
         for i, sample in enumerate(tqdm.tqdm(x)):
             # Nawawy's start
-            sample = sample.reshape(1, explore_params[1], explore_params[2])
+            sample = sample.reshape(1, backcast, nv)
             original_pred,_,_,_,_ = self.model_predict(self.feature_extractor(sample))
             # Nawawy's end
             if len(np.shape(original_pred)) == 2:
@@ -170,12 +170,17 @@ class GraphExplorer(ABC):
             else:
                 score_input = target_features[i]
             # Nawawy's start
-            sample = sample.reshape(explore_params[1]*explore_params[2])
+            sample = sample.reshape(backcast*nv)
             # Nawawy's end
-            for sample_next, transformation_record, _ in self.search(sample, score_input):
-
+            for sample_next, transformation_record, _ in self.search([sample, backcast, nv], score_input):
+                # Nawawy's start
+                sample_next = sample_next.reshape(1, backcast, nv)
+                new_prediction, _, _, _, _ = self.model_predict(self.feature_extractor(sample_next))
+                if len(np.shape(new_prediction)) == 2:
+                    new_prediction = new_prediction
                 # Score the current sample
-                score = self.scoring_function(sample_next, score_input)
+                score = self.scoring_function(new_prediction, score_input)
+                # Nawawy's end
 
                 # Early exit conditions
                 # If using feature loss, then we can early exit once the target features are attained
@@ -187,13 +192,8 @@ class GraphExplorer(ABC):
                     best_score = score
                     break
 
-                # Nawawy's start
-                sample_next = sample_next.reshape(1, explore_params[1], explore_params[2])
+
                 # For all loss types, we can early exit if an adversarial example is found
-                new_prediction,_,_,_,_ = self.model_predict(self.feature_extractor(sample_next))
-                # Nawawy's end
-                if len(np.shape(new_prediction)) == 2:
-                    new_prediction = new_prediction
 
                 # Nawawy's start
                 if self.target_label is not None and np.argmax(new_prediction.cpu().detach().numpy()) == self.target_label:
