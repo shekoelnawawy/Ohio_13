@@ -22,11 +22,11 @@ def feature_extractor(x):
 # Nawawy's end
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 
 
 
-#use rnn? 
+#use rnn?
 rnn=True
 
 #general hyperparameters
@@ -68,7 +68,7 @@ subjects=['540','544','552','567','584','596']
 loopsthrough=1
 if PERSUBJECT:
 	loopsthrough=7
-	
+
 #NUMBER OF INPUT VARIABLES
 nv=1
 if AVD:
@@ -86,22 +86,22 @@ backcastopts=[2,3,4,5,6,7]
 
 
 
-	
+
 #################################### MAIN SECTION ############################################
 def main():
 	maindir = os.getcwd()+'/'+outstr
 
 	os.makedirs(maindir)
-	
+
 	basedir=maindir
-	
+
 	#some arrays to store losses for later
 	subouts=[]
 	submaes=[]
 	suboutse=[]
 	suboutseh=[]
 	suboutsel=[]
-	
+
 	#loop through subjects, starting with all subjects
 	#(will do all subjects only if PERSUBJECT is false)
 	for subb in range(loopsthrough):
@@ -117,7 +117,7 @@ def main():
 		else:
 			sub=99
 		curmodel=0
-		
+
 		#Training section
 		for bc in backcastopts:
 			if PRETRAIN and sub==99:
@@ -129,12 +129,12 @@ def main():
 			torch.manual_seed(SEED)
 			train_and_evaluate(curmodel,maindir,horizon,bc*6,sub,zerodir)
 			curmodel=curmodel+1
-		
+
 		#final evaluation of ensemble
 		#get test data
 		train,val,test=makedata(2*6+horizon,sub)
 		testgen = ordered_data(BATCHSIZE, 2*6,horizon,test)
-		
+
 		#Keep track of total number of evaluated points
 		#and total number of each type of event point
 		totalpoints=0
@@ -156,9 +156,12 @@ def main():
 			#loop through each directory and load predicions
 			preds=[]
 			for f in os.listdir(maindir):
-				temp=joblib.load(maindir+'/'+f+'/preds.pkl')
-				preds.append(temp[batch])
-				del temp
+				# Nawawy's start
+				if f.startswith('model'):
+				# Nawawy's end
+					temp=joblib.load(maindir+'/'+f+'/preds.pkl')
+					preds.append(temp[batch])
+					del temp
 			#take median
 			preds=np.array(preds)
 			# Nawawy's start
@@ -177,6 +180,8 @@ def main():
 			# Nawawy's start
 			if (len(target) < BATCHSIZE):
 				target = np.pad(target, ((0, BATCHSIZE - len(target)), (0, 0)), mode='constant', constant_values=0)
+			joblib.dump(target, maindir + '/target.pkl')
+			joblib.dump(median, maindir + '/median.pkl')
 			# Nawawy's end
 
 			#get losses
@@ -199,11 +204,11 @@ def main():
 			ee,te=eventl(target,median,x[:,:,0])
 			totalel+=te
 			lossesel.append(ee*te)
-			
+
 			batch=batch+1
 			if done:
 				break
-		
+		joblib.dump(test, maindir + '/test.pkl')
 		#write final losses
 		#MSE for whole window
 		t=open(maindir+"/"+str(np.sum(np.asarray(losses))/totalpoints)+".FINALMSEout","w")
@@ -218,9 +223,9 @@ def main():
 		#rmse and mae for last point only
 		t=open(maindir+"/"+str(np.sqrt(np.sum(np.asarray(rmselosses))/totalpoints))+".FINAL_RMSE_out","w")
 		t=open(maindir+"/"+str(np.sum(np.asarray(maes))/totalpoints)+".FINAL_MAEout","w")
-		
+
 		#collected losses for all subjects, but not all subject run
-		if sub!=99:	
+		if sub!=99:
 			subouts.append(np.sum(np.asarray(rmselosses))/totalpoints)
 			submaes.append(np.sum(np.asarray(maes))/totalpoints)
 			suboutse.append(np.nansum(np.asarray(lossese))/totale)
@@ -246,14 +251,14 @@ def main():
 def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,basedir):
 	mydir = maindir+'/model'+str(curmodel)
 	os.makedirs(mydir)
-	
+
 	#dump params
 	paramlist=[forecast_length,backcast_length]
 	joblib.dump(paramlist,mydir+'/params.pkl')
-	
+
 	pin_memory=True
 	device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-	
+
 
 	batch_size = BATCHSIZE
 	train,val,test=makedata(backcast_length+forecast_length,sub)
@@ -261,7 +266,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	traingen = data(batch_size, backcast_length, forecast_length,train)
 	valgen = data(batch_size, backcast_length, forecast_length,val)
 	testgen = ordered_data(batch_size, backcast_length, forecast_length,test)
-	
+
 	net = network(device,backcast_length,forecast_length,NUMBLOCKS)
 	optimiser = optim.Adam(net.parameters(),lr=.0002)
 
@@ -275,31 +280,39 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	while (True):
 		x, target, done = next(testgen)
 		if index == 0:
-			allPatients = x.reshape(-1, backcast_length*nv)
+			allPatients_benign = x.reshape(-1, backcast_length * nv)
 		else:
-			allPatients = np.append(allPatients, x.reshape(-1, backcast_length*nv))
+			allPatients_benign = np.append(allPatients_benign, x.reshape(-1, backcast_length * nv))
 		index = index + 1
 		if done:
 			break
 
-	allPatients = allPatients.reshape(-1, backcast_length*nv)
+	allPatients_benign = allPatients_benign.reshape(-1, backcast_length * nv)
+	explore_params = [allPatients_benign, backcast_length, nv]
+	allPatients_adversarial = np.array(explorer.explore(explore_params))
 
-	explore_params = [allPatients, backcast_length, nv]
-	allPatients = np.array(explorer.explore(explore_params))
+	allPatients_benign = allPatients_benign.reshape(-1, backcast_length, nv)  # 15701, 12, 7
+	for i in range(len(allPatients_adversarial)):
+		if allPatients_adversarial[i] is None:
+			allPatients_adversarial[i] = allPatients_benign[i].reshape(1, backcast_length, nv).copy()
+		if i == 0:
+			temp = allPatients_adversarial[i].reshape(1, backcast_length, nv)
+		else:
+			temp = np.append(temp, allPatients_adversarial[i].reshape(1, backcast_length, nv))
 
-	allPatients = allPatients.reshape((1, len(allPatients)*backcast_length, nv))
 
 
+	allPatients_adversarial = temp.reshape((1, len(allPatients_adversarial) * backcast_length, nv))
 
-	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients)
-
+	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
 	if backcast_length == 12:
 		global ensembleTestgen
 		ensembleTestgen = testgen
+		joblib.dump(allPatients_adversarial, maindir + '/allPatients_adversarial.pkl')
 	# Nawawy's end
 
-	eval(net, optimiser, testgen,mydir,  device)
+	eval(net, optimiser, testgen, mydir, device)
 
 
 
@@ -308,15 +321,15 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 	losss2=mse
 	losss3=msedoubs
 	loadnoopt(net, optimiser,basedir)
-	
-	
+
+
 	trains=[]
 	vals=[]
 	patience=20
 	prevvalloss=np.inf
 	unimproved=0
-		
-		
+
+
 	net.to(device)
 	lossbonsum=1
 	lossbonsumf=1
@@ -326,7 +339,7 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 		if fpoww>0:
 			lossbonsumf = lossbonsumf+(i+1)**fpoww
 		magbonsum=magbonsum+1/(i+1)
-	
+
 	for grad_step in range(500):
 		temptrain=[]
 		total=0
@@ -353,8 +366,8 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 				break
 		trains.append(np.sum(temptrain)/total)
 		print('grad_step = '+str(grad_step)+' loss = '+str(trains[-1]))
-		
-			
+
+
 		tempval=[]
 		total=0
 		while(True):
@@ -367,8 +380,8 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 				if done:
 					break
 		vals.append(np.sum(tempval)/total)
-		
-		print('val loss: '+str(vals[-1]))				
+
+		print('val loss: '+str(vals[-1]))
 
 		if vals[-1]<prevvalloss:
 			print('loss improved')
@@ -386,9 +399,9 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 	plt.savefig(mydir+"/loss_over_time.png")
 	plt.clf()
 	del net
-			
-			
-			
+
+
+
 def eval(net, optimiser, testgen,mydir,  device):
 	with torch.no_grad():
 		load(net, optimiser,mydir)
@@ -441,14 +454,14 @@ def mse(output, target):
 	for r in np.arange(1,len(output)):
 		mul=(r+1)**fpoww
 		loss=loss+mul*mse_one(output[r],target)
-	return loss  
+	return loss
 
 def msedoubs(output, target):
 	loss=mse_one(output[0],target[0])
 	for r in np.arange(1,len(output)):
 		mul=(r+1)**poww
 		loss=loss+mul*mse_one(output[r],target[r])
-	return loss  
+	return loss
 
 def mse_one(output, target):
 	return torch.mean((output - target)**2)
@@ -464,44 +477,44 @@ def calcsizeloss(output):
 	return loss
 
 
-	
+
 
 
 def mse_one_eval(output, target):
 	output=output[target!=0]
 	target=target[target!=0]
 	return torch.mean((output - target)**2)
-	
+
 
 def mse_cpu(output, target):
 	output=output[target!=0]
 	target=target[target!=0]
 	return np.mean((output - target)**2)
-	
+
 def mse_lastpointonly(output, target):
 	output=output[:,-1]
 	target=target[:,-1]
 	loss = torch.mean((output - target)**2)
-	return loss 
+	return loss
 
 def mse_lastpointonly_cpu(output, target):
 	output=output[:,-1]
 	target=target[:,-1]
 	loss = np.mean((output - target)**2)
-	return loss 
-	
+	return loss
 
-	
+
+
 def mae_lastpointonly_cpu(output, target):
 	output=output[:,-1]
 	target=target[:,-1]
 	loss = np.mean(np.abs(output - target))
-	return loss 
+	return loss
 
 
 
 
-  
+
 def event(target,output,x):
 	output=output[(x[:,-1]<=180)*(x[:,-1]>=70),:]
 	target=target[(x[:,-1]<=180)*(x[:,-1]>=70),:]
@@ -510,7 +523,7 @@ def event(target,output,x):
 	output=output[eventwindows,-1]
 	target=target[eventwindows,-1]
 	return np.mean((output - target)**2),len(target)
-	
+
 def eventh(target,output,x):
 	output=output[(x[:,-1]<=180)*(x[:,-1]>=70),:]
 	target=target[(x[:,-1]<=180)*(x[:,-1]>=70),:]
@@ -519,7 +532,7 @@ def eventh(target,output,x):
 	output=output[eventwindows,-1]
 	target=target[eventwindows,-1]
 	return np.mean((output - target)**2),len(target)
-	
+
 def eventl(target,output,x):
 	output=output[(x[:,-1]<=180)*(x[:,-1]>=70),:]
 	target=target[(x[:,-1]<=180)*(x[:,-1]>=70),:]
@@ -528,9 +541,9 @@ def eventl(target,output,x):
 	output=output[eventwindows,-1]
 	target=target[eventwindows,-1]
 	return np.mean((output - target)**2),len(target)
-	
-	
-####################################  MODEL SECTION  ############################################################################################################  
+
+
+####################################  MODEL SECTION  ############################################################################################################
 
 
 
@@ -567,14 +580,14 @@ class Block(nn.Module):
 		if not rnn:
 			if AVD:
 				x = F.relu(self.lin1(x.flatten(1,-1).to(self.device)))
-			else:	
+			else:
 				x = F.relu(self.lin1(x.to(self.device)))
 			x = F.relu(self.lin2(x))
 			x = F.relu(self.lin3(x))
 			x = F.relu(self.lin4(x))
 			theta_b = F.relu(self.backcast_layer(x))
 			theta_f = F.relu(self.forecast_layer(x))
-			out = self.backcast_out(theta_b) 
+			out = self.backcast_out(theta_b)
 			forecast = self.forecast_out(theta_f)
 			return out,forecast
 		if rnn:
@@ -608,7 +621,7 @@ class Stack(nn.Module):
 			self.blocks.append(block)
 
 
-		
+
 	def forward(self, x, backcast,backsum,device):
 		backs=[]
 		fores=[]
@@ -652,11 +665,11 @@ class network(nn.Module):
 
 
 
-  
+
 
 	def forward(self, backcast):
-		forecast = torch.zeros(size=(backcast.size()[0], self.forecast_length,)).to(self.device)  
-		backsum = torch.zeros(size=(backcast.size()[0], self.backcast_length,)).to(self.device)  
+		forecast = torch.zeros(size=(backcast.size()[0], self.forecast_length,)).to(self.device)
+		backsum = torch.zeros(size=(backcast.size()[0], self.backcast_length,)).to(self.device)
 		fores=[]
 		backs=[]
 		backtargs=[]
@@ -676,18 +689,18 @@ class network(nn.Module):
 
 
 
-####################################  DATA GENERATION SECTION  ############################################################################################################  
+####################################  DATA GENERATION SECTION  ############################################################################################################
 
 def makedata(totallength,sub):
 	train=[]
 	test=[]
 	val=[]
-	
+
 	stored_trains={}
 	#first load train data
 	for f in os.listdir('2020data'):
 		if f.endswith('train.pkl'):
-			if not sub==99: 
+			if not sub==99:
 				if not f[:3]==subjects[sub]:
 					continue
 			a=joblib.load('2020data/'+f)
@@ -713,12 +726,12 @@ def makedata(totallength,sub):
 				val.append(x.copy()[int(ll*.8):,:])
 			#store to use in test for end
 			stored_trains[f]=x.copy()
-			
-		
-			
+
+
+
 	for f in os.listdir('2020data'):
 		if f.endswith('test.pkl'):
-			if not sub==99: 
+			if not sub==99:
 				if not f[:3]==subjects[sub]:
 					continue
 			a=joblib.load('2020data/'+f)
@@ -744,14 +757,14 @@ def makedata(totallength,sub):
 				test.append(x.copy()[:,0])
 			else:
 				test.append(x.copy())
-	
+
 	return train,val,test
 
 
 
 
 def data(num_samples, backcast_length, forecast_length, data):
-		def get_x_y(ii):  
+		def get_x_y(ii):
 				temp=data[0]
 				done=False
 				for s in range(len(data)):
@@ -764,7 +777,7 @@ def data(num_samples, backcast_length, forecast_length, data):
 						ii=ii-(len(temp)-backcast_length-forecast_length)-1
 				if not done:
 						return None,None,True
-								
+
 
 
 				i=ii
@@ -778,10 +791,10 @@ def data(num_samples, backcast_length, forecast_length, data):
 					return np.asarray([]),None,False
 
 				return learn,see,False
-   
-		   
-		
-		
+
+
+
+
 		def gen():
 				done=False
 				indices=range(99999999)
@@ -817,7 +830,7 @@ def data(num_samples, backcast_length, forecast_length, data):
 
 
 def ordered_data(num_samples, backcast_length, forecast_length, dataa):
-	def get_x_y(i):  
+	def get_x_y(i):
 		temp=dataa[0]
 		done=False
 		for s in range(len(dataa)):
@@ -844,9 +857,9 @@ def ordered_data(num_samples, backcast_length, forecast_length, dataa):
 		if see[-1]==0:
 			return np.asarray([]),None,False
 		return learn,see,False
-	
-	
-	
+
+
+
 	def gen():
 		done=False
 		xx = []
@@ -873,12 +886,12 @@ def ordered_data(num_samples, backcast_length, forecast_length, dataa):
 					xx = []
 					yy = []
 	return gen()
-	
+
 
 
 if __name__ == '__main__':
 	main()
-	
-	
-	
+
+
+
 
