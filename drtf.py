@@ -152,6 +152,8 @@ def main():
 		batch=0
 		while(True):
 			x,target,done=next(testgen)
+			if done:
+				break
 			totalpoints = totalpoints+x.shape[0]
 			#loop through each directory and load predicions
 			preds=[]
@@ -162,22 +164,10 @@ def main():
 					del temp
 			#take median
 			preds=np.array(preds)
-			# Nawawy's start
-			for i in range(len(preds)):
-				if (len(preds[i]) < BATCHSIZE):
-					preds[i] = np.pad(preds[i], ((0, BATCHSIZE - len(preds[i])), (0, 0)), mode='constant', constant_values=0)
-				if i == 0:
-					temp_preds = preds[i]
-				else:
-					temp_preds = np.append(temp_preds, preds[i])
 
-			preds = temp_preds.reshape((len(preds), BATCHSIZE, horizon))
-			# Nawawy's end
 			median=np.median(preds,axis=0)
 
 			# Nawawy's start
-			if (len(target) < BATCHSIZE):
-				target = np.pad(target, ((0, BATCHSIZE - len(target)), (0, 0)), mode='constant', constant_values=0)
 			joblib.dump(target, maindir+'/target.pkl')
 			joblib.dump(median, maindir + '/median.pkl')
 			# Nawawy's end
@@ -186,11 +176,6 @@ def main():
 			losses.append(mse_cpu(target, median)*x.shape[0])
 			rmselosses.append(mse_lastpointonly_cpu(target, median)*x.shape[0])
 			maes.append(mae_lastpointonly_cpu(target, median)*x.shape[0])
-
-			# Nawawy's start
-			if (len(x) < BATCHSIZE):
-				x = np.pad(x, ((0, BATCHSIZE - len(x)), (0, 0), (0, 0)), mode='constant', constant_values=0)
-			# Nawawy's end
 
 			#event losses- will get MSE of last point
 			ee,te=event(target,median,x[:,:,0])
@@ -204,9 +189,11 @@ def main():
 			lossesel.append(ee*te)
 			
 			batch=batch+1
-			if done:
-				break
+
+		# Nawawy's start
 		joblib.dump(test, maindir+'/test.pkl')
+		# Nawawy's end
+
 		#write final losses
 		#MSE for whole window
 		t=open(maindir+"/"+str(np.sum(np.asarray(losses))/totalpoints)+".FINALMSEout","w")
@@ -277,15 +264,15 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	index = 0
 	while (True):
 		x, target, done = next(testgen)
-		if index == 0:
-			allPatients_benign = x.reshape(-1, backcast_length*nv)
-		else:
-			allPatients_benign = np.append(allPatients_benign, x.reshape(-1, backcast_length*nv))
-		index = index + 1
 		if done:
 			break
+		if index == 0:
+			allPatients_benign = x.reshape(-1, backcast_length * nv)
+		else:
+			allPatients_benign = np.append(allPatients_benign, x.reshape(-1, backcast_length * nv))
+		index = index + 1
 
-	allPatients_benign = allPatients_benign.reshape(-1, backcast_length*nv)
+	allPatients_benign = allPatients_benign.reshape(-1, backcast_length * nv)
 	explore_params = [allPatients_benign, backcast_length, nv]
 	allPatients_adversarial = np.array(explorer.explore(explore_params))
 
@@ -300,15 +287,12 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	# allPatients_adversarial = temp.reshape((-1, backcast_length, nv))
 
-	allPatients_adversarial = temp.reshape((1, len(allPatients_adversarial)*backcast_length, nv))
+	allPatients_adversarial = temp.reshape((1, len(allPatients_adversarial) * backcast_length, nv))
 
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
-
 	if backcast_length == 12:
-		global ensembleTestgen
-		ensembleTestgen = testgen
-		joblib.dump(allPatients_adversarial, maindir+'/allPatients_adversarial.pkl')
+		joblib.dump(allPatients_adversarial, maindir + '/allPatients_adversarial.pkl')
 	# Nawawy's end
 
 	eval(net, optimiser, testgen,mydir,  device)
@@ -346,6 +330,8 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 			optimiser.zero_grad()
 			net.train()
 			x,target,done=next(traingen)
+			if done:
+				break
 			total=total+x.shape[0]
 			forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
 			if FIL:
@@ -361,8 +347,6 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 			loss.backward()
 			optimiser.step()
 			temptrain.append(loss.item()*x.shape[0])
-			if done:
-				break
 		trains.append(np.sum(temptrain)/total)
 		print('grad_step = '+str(grad_step)+' loss = '+str(trains[-1]))
 		
@@ -372,12 +356,12 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 		while(True):
 			with torch.no_grad():
 				x,target,done=next(valgen)
+				if done:
+					break
 				total=total+x.shape[0]
 				forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
 				loss = losss(forecast, torch.tensor(target, dtype=torch.float).to(device))
 				tempval.append(loss.item()*x.shape[0])
-				if done:
-					break
 		vals.append(np.sum(tempval)/total)
 		
 		print('val loss: '+str(vals[-1]))				
@@ -410,13 +394,14 @@ def eval(net, optimiser, testgen,mydir,  device):
 		preds=[]
 		while(True):
 			x,target,done=next(testgen)
+			if done:
+				break
 			totalpoints = totalpoints+x.shape[0]
 			forecast,dummy1,backs,dummy3,dummy4 = net(torch.tensor(x, dtype=torch.float).to(device))
 			preds.append(forecast.cpu().numpy())
 			losses.append(mse_one_eval(forecast, torch.tensor(target, dtype=torch.float).to(device)).item()*x.shape[0])
 			rmselosses.append(mse_lastpointonly(forecast, torch.tensor(target, dtype=torch.float).to(device)).item()*x.shape[0])
-			if done:
-				break
+
 		#write final loss
 		t=open(mydir+"/"+str(np.sum(np.asarray(losses))/totalpoints)+".testMSEout","w")
 		t=open(mydir+"/"+str(np.sqrt(np.sum(np.asarray(rmselosses))/totalpoints))+".testRmseout","w")
