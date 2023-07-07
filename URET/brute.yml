@@ -4,7 +4,7 @@ explorer_params:
     init_args:
         scoring_alg: "model_loss"
         search_size: 5
-        max_depth: 2
+        max_depth: 1
 ranker_params:
     type: "BruteForce"
     init_args:
