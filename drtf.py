@@ -150,6 +150,10 @@ def main():
 		lossesel=[]
 		#loop through every batch in training data.
 		batch=0
+		# Nawawy's start
+		all_targets=[]
+		all_medians=[]
+		# Nawawy's end
 		while(True):
 			x,target,done=next(testgen)
 			# Nawawy's start
@@ -172,8 +176,8 @@ def main():
 			median=np.median(preds,axis=0)
 
 			# Nawawy's start
-			joblib.dump(target, maindir+'/target.pkl')
-			joblib.dump(median, maindir + '/median.pkl')
+			all_targets.append(target)
+			all_medians.append(median)
 			# Nawawy's end
 
 			#get losses
@@ -195,7 +199,9 @@ def main():
 			batch=batch+1
 
 		# Nawawy's start
-		joblib.dump(test, maindir+'/test.pkl')
+		joblib.dump(all_targets, maindir + '/target.pkl')
+		joblib.dump(all_medians, maindir + '/median.pkl')
+		joblib.dump(test, maindir+'/benign_data.pkl')
 		# Nawawy's end
 
 		#write final losses
@@ -296,7 +302,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
 	if backcast_length == 12:
-		joblib.dump(allPatients_adversarial, maindir + '/allPatients_adversarial.pkl')
+		joblib.dump(allPatients_adversarial, maindir + '/adversarial_data.pkl')
 	# Nawawy's end
 
 	eval(net, optimiser, testgen,mydir,  device)
