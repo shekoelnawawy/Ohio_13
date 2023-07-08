@@ -30,7 +30,7 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 rnn=True
 
 #general hyperparameters
-BATCHSIZE = 512
+BATCHSIZE = 64  # originally 512 but modified only to run on lambda machine
 NUMBLOCKS = 7
 HIDDEN  = 300
 SEED=0
@@ -152,13 +152,17 @@ def main():
 		batch=0
 		while(True):
 			x,target,done=next(testgen)
+			# Nawawy's start
 			if done:
 				break
+			# Nawawy's end
 			totalpoints = totalpoints+x.shape[0]
 			#loop through each directory and load predicions
 			preds=[]
 			for f in os.listdir(maindir):
+				# Nawawy's start
 				if f.startswith('model'):
+				# Nawawy's end
 					temp=joblib.load(maindir+'/'+f+'/preds.pkl')
 					preds.append(temp[batch])
 					del temp
@@ -330,8 +334,10 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 			optimiser.zero_grad()
 			net.train()
 			x,target,done=next(traingen)
+			# Nawawy's start
 			if done:
 				break
+			# Nawawy's end
 			total=total+x.shape[0]
 			forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
 			if FIL:
@@ -356,8 +362,10 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 		while(True):
 			with torch.no_grad():
 				x,target,done=next(valgen)
+				# Nawawy's start
 				if done:
 					break
+				# Nawawy's end
 				total=total+x.shape[0]
 				forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
 				loss = losss(forecast, torch.tensor(target, dtype=torch.float).to(device))
@@ -394,8 +402,10 @@ def eval(net, optimiser, testgen,mydir,  device):
 		preds=[]
 		while(True):
 			x,target,done=next(testgen)
+			# Nawawy's start
 			if done:
 				break
+			# Nawawy's end
 			totalpoints = totalpoints+x.shape[0]
 			forecast,dummy1,backs,dummy3,dummy4 = net(torch.tensor(x, dtype=torch.float).to(device))
 			preds.append(forecast.cpu().numpy())

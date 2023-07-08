@@ -25,7 +25,7 @@ class BruteForce(RankingAlgorithm):
         backcast = sample[1]
         nv = sample[2]
         sample = sample[0]
-        # Nawawy's end
+    # Nawawy's end
 
         # Create transformation record
         if self.multi_feature_input and current_transformation_records is None:
