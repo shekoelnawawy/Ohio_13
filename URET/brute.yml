@@ -3,7 +3,7 @@ explorer_params:
     predict_function_name: "forward" #Name of function to get output prediction. Ohio_13 drtf.py line 336
     init_args:
         scoring_alg: "model_loss"
-        search_size: 5
+        search_size: 15
         max_depth: 1
 ranker_params:
     type: "BruteForce"
@@ -24,18 +24,18 @@ transformer_params:
           - 63 #glucose (t-3)
           - 70 #glucose (t-2)
           - 77 #glucose (t-1)
-          - 5  #finger (t-12)
-          - 12 #finger (t-11)
-          - 19 #finger (t-10)
-          - 26 #finger (t-9)
-          - 33 #finger (t-8)
-          - 40 #finger (t-7)
-          - 47 #finger (t-6)
-          - 54 #finger (t-5)
-          - 61 #finger (t-4)
-          - 68 #finger (t-3)
-          - 75 #finger (t-2)
-          - 82 #finger (t-1)
+#          - 5  #finger (t-12)
+#          - 12 #finger (t-11)
+#          - 19 #finger (t-10)
+#          - 26 #finger (t-9)
+#          - 33 #finger (t-8)
+#          - 40 #finger (t-7)
+#          - 47 #finger (t-6)
+#          - 54 #finger (t-5)
+#          - 61 #finger (t-4)
+#          - 68 #finger (t-3)
+#          - 75 #finger (t-2)
+#          - 82 #finger (t-1)
       init_args:
           input_constraints: #{"bounds": {"lower":40, "upper":400, "method":0"}}
                 bounds:
