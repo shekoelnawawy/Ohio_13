@@ -3,7 +3,7 @@ explorer_params:
     predict_function_name: "forward" #Name of function to get output prediction. Ohio_13 drtf.py line 336
     init_args:
         scoring_alg: "model_loss"
-        search_size: 20
+        search_size: 1
         max_depth: 1
 ranker_params:
     type: "BruteForce"
