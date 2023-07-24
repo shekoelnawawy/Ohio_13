@@ -62,6 +62,10 @@ class NumberTransformer(Transformer):
                     "number_type"
                 ] = number_type  # Number type tells the subtransformers what data type they are modifying
 
+        # Nawawy's start
+        subtransformer_args[0]["number_type"] = number_type
+        # Nawawy's end
+
         super(NumberTransformer, self).__init__(subtransformer_args, input_constraints, input_processor)
 
     def init_transformation_record(self, x):

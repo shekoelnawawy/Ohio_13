@@ -11,7 +11,7 @@ ranker_params:
         multi_feature_input: True
 transformer_params:
     - data_type: "number"
-      feature_index: 
+      feature_index:
           - 0  #glucose (t-12)
           - 7  #glucose (t-11)
           - 14 #glucose (t-10)
@@ -37,14 +37,14 @@ transformer_params:
 #          - 75 #finger (t-2)
 #          - 82 #finger (t-1)
       init_args:
+          number_type: "int"
           input_constraints: #{"bounds": {"lower":40, "upper":400, "method":0"}}
                 bounds:
                     lower: 180
                     upper: 499
                     method: 0
           subtransformer_args:
-              - name: "Increment"
-          number_type: "int"
+              - name: "Modify"
 #    - data_type: "number"
 #      feature_index:
 #          - 1  #bolus dose (t-12)
