@@ -42,7 +42,9 @@ class Transformer(ABC):
             if "init_args" in args.keys():
                 self.subtransformer_list.append(subtransformer(**args["init_args"]))
             else:
+                # Nawawy's start
                 self.subtransformer_list.append(subtransformer(low=input_constraints["bounds"]["lower"], high = input_constraints["bounds"]["upper"], number_type=subtransformer_args[0]["number_type"]))
+                # Nawawy's end
 
         self.input_constraints = input_constraints
         self.input_processor = input_processor
