@@ -157,7 +157,9 @@ class BeamSearchGraphExplorer(GraphExplorer):
                 if self.max_visits and len(self.visited_nodes) >= self.max_visits:
                     break
                 for sts_tuple in self.search(
-                    sample_next,
+                    # Nawawy's start
+                    [sample_next, backcast, nv],
+                    # Nawawy's end
                     score_input,
                     transformation_records_next,
                     depth + 1,
