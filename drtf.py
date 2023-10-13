@@ -201,7 +201,6 @@ def main():
 		# Nawawy's start
 		joblib.dump(all_targets, maindir + '/target.pkl')
 		joblib.dump(all_medians, maindir + '/median.pkl')
-		joblib.dump(test, maindir+'/benign_data.pkl')
 		# Nawawy's end
 
 		#write final losses
@@ -302,6 +301,8 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
 	if backcast_length == 12:
+		allPatients_benign = allPatients_benign.reshape((1, len(allPatients_benign) * backcast_length, nv))
+		joblib.dump(allPatients_benign, maindir + '/benign_data.pkl')
 		joblib.dump(allPatients_adversarial, maindir + '/adversarial_data.pkl')
 	# Nawawy's end
 
