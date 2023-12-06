@@ -301,7 +301,7 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
 	if backcast_length == 12:
-		allPatients_benign = allPatients_benign.reshape((1, len(allPatients_benign) * backcast_length, nv))
+		allPatients_adversarial = allPatients_adversarial.reshape(-1, backcast_length, nv)  # 15701, 12, 7
 		joblib.dump(allPatients_benign, maindir + '/benign_data.pkl')
 		joblib.dump(allPatients_adversarial, maindir + '/adversarial_data.pkl')
 	# Nawawy's end
