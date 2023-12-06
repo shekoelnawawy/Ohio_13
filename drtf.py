@@ -199,8 +199,8 @@ def main():
 			batch=batch+1
 
 		# Nawawy's start
-		joblib.dump(all_targets, maindir + '/target.pkl')
-		joblib.dump(all_medians, maindir + '/median.pkl')
+		joblib.dump(np.array(all_targets).reshape(-1, horizon), maindir + '/actual_output.pkl')
+		joblib.dump(np.array(all_medians).reshape(-1, horizon), maindir + '/predicted_output.pkl')
 		# Nawawy's end
 
 		#write final losses
