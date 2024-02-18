@@ -155,10 +155,11 @@ def main():
 		all_medians=[]
 		# Nawawy's end
 		while(True):
-			x,target,done=next(testgen)
+			x_postprandial,target,done=next(testgen)
 			# Nawawy's start
 			if done:
 				break
+			x = x_postprandial[:,:,:-1]
 			# Nawawy's end
 			totalpoints = totalpoints+x.shape[0]
 			#loop through each directory and load predicions
@@ -268,24 +269,30 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 
 	# Nawawy's start
 	# CALL URET HERE
-	explorer = process_config_file(cf, net, feature_extractor=feature_extractor, input_processor_list=[])
-	explorer.scoring_function = mse
 	index = 0
 	while (True):
-		x, target, done = next(testgen)
+		x_postprandial, target, done = next(testgen)
 		if done:
 			break
+		x = x_postprandial[:,:,:-1]
 		if index == 0:
 			allPatients_benign = x.reshape(-1, backcast_length * nv)
+			allPatients_postprandial = x_postprandial.reshape((-1, backcast_length * (nv + 1)))
 		else:
 			allPatients_benign = np.append(allPatients_benign, x.reshape(-1, backcast_length * nv))
+			allPatients_postprandial = np.append(allPatients_postprandial, x_postprandial.reshape(-1, backcast_length * (nv + 1)))
 		index = index + 1
 
 	allPatients_benign = allPatients_benign.reshape(-1, backcast_length * nv)
+	allPatients_postprandial = allPatients_postprandial.reshape(-1, backcast_length * (nv + 1))
+
+	explorer = process_config_file(cf, net, feature_extractor=feature_extractor, input_processor_list=[])
+	explorer.scoring_function = mse
 	explore_params = [allPatients_benign, backcast_length, nv]
 	allPatients_adversarial = np.array(explorer.explore(explore_params))
 
 	allPatients_benign = allPatients_benign.reshape(-1, backcast_length, nv)  # 15701, 12, 7
+	allPatients_postprandial = allPatients_postprandial.reshape(-1, backcast_length, nv + 1)  # 15701, 12, 8
 	for i in range(len(allPatients_adversarial)):
 		if allPatients_adversarial[i] is None:
 			allPatients_adversarial[i] = allPatients_benign[i].reshape(1, backcast_length, nv).copy()
@@ -294,15 +301,13 @@ def train_and_evaluate(curmodel,maindir,forecast_length,backcast_length,sub,base
 		else:
 			temp = np.append(temp, allPatients_adversarial[i].reshape(1, backcast_length, nv))
 
-	# allPatients_adversarial = temp.reshape((-1, backcast_length, nv))
-
 	allPatients_adversarial = temp.reshape((1, len(allPatients_adversarial) * backcast_length, nv))
 
 	testgen = ordered_data(batch_size, backcast_length, forecast_length, allPatients_adversarial)
 
 	if backcast_length == 12:
 		allPatients_adversarial = allPatients_adversarial.reshape(-1, backcast_length, nv)  # 15701, 12, 7
-		joblib.dump(allPatients_benign, maindir + '/benign_data.pkl')
+		joblib.dump(allPatients_postprandial, maindir + '/benign_data.pkl')
 		joblib.dump(allPatients_adversarial, maindir + '/adversarial_data.pkl')
 	# Nawawy's end
 
@@ -340,10 +345,11 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 		while(True):
 			optimiser.zero_grad()
 			net.train()
-			x,target,done=next(traingen)
 			# Nawawy's start
+			x_postprandial, target, done = next(traingen)
 			if done:
 				break
+			x = x_postprandial[:, :, :-1]
 			# Nawawy's end
 			total=total+x.shape[0]
 			forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
@@ -368,10 +374,11 @@ def fit(net, optimiser, traingen,valgen,mydir,device, basedir):
 		total=0
 		while(True):
 			with torch.no_grad():
-				x,target,done=next(valgen)
 				# Nawawy's start
+				x_postprandial, target, done = next(valgen)
 				if done:
 					break
+				x = x_postprandial[:, :, :-1]
 				# Nawawy's end
 				total=total+x.shape[0]
 				forecast,fores,backs,backsum,backtargs= net(   torch.tensor(x, dtype=torch.float).to(device)	 )
@@ -692,74 +699,89 @@ class network(nn.Module):
 
 ####################################  DATA GENERATION SECTION  ############################################################################################################  
 
-def makedata(totallength,sub):
-	train=[]
-	test=[]
-	val=[]
-	
-	stored_trains={}
-	#first load train data
+def makedata(totallength, sub):
+	train = []
+	test = []
+	val = []
+
+	stored_trains = {}
+	# first load train data
 	for f in os.listdir('2020data'):
 		if f.endswith('train.pkl'):
-			if not sub==99: 
-				if not f[:3]==subjects[sub]:
+			if not sub == 99:
+				if not f[:3] == subjects[sub]:
 					continue
-			a=joblib.load('2020data/'+f)
-			g=np.asarray(a['glucose'])
-			b=np.asarray(a['basal'])
-			d=np.asarray(a['dose'])
-			c=np.asarray(a['carbs'])
-			fing=np.asarray(a['finger'])
-			hr=np.asarray(a['hr'])
-			gsr=np.asarray(a['gsr'])
-			t=np.array(a.index.values)
-			t1=np.sin( t*2*np.pi/288)
-			t2=np.cos( t*2*np.pi/288)
-			miss=(np.isnan(g)).astype(float)
-			miss2=(np.isnan(fing)).astype(float)
-			x=np.stack((g,d,c,t1,t2,fing,miss),axis=1)
-			ll=x.shape[0]
+			a = joblib.load('2020data/' + f)
+			g = np.asarray(a['glucose'])
+			b = np.asarray(a['basal'])
+			d = np.asarray(a['dose'])
+			c = np.asarray(a['carbs'])
+			fing = np.asarray(a['finger'])
+			hr = np.asarray(a['hr'])
+			gsr = np.asarray(a['gsr'])
+
+			# Nawawy's start
+			post = np.asarray(a['postprandial'])
+			# Nawawy's end
+
+			t = np.array(a.index.values)
+			t1 = np.sin(t * 2 * np.pi / 288)
+			t2 = np.cos(t * 2 * np.pi / 288)
+			miss = (np.isnan(g)).astype(float)
+			miss2 = (np.isnan(fing)).astype(float)
+
+			# Nawawy's start
+			x = np.stack((g, d, c, t1, t2, fing, miss, post), axis=1)
+			# Nawawy's end
+
+			ll = x.shape[0]
 			if not AVD:
-				train.append(x.copy()[:int(ll*.8),0])
-				val.append(x.copy()[int(ll*.8):,0])
+				train.append(x.copy()[:int(ll * .8), 0])
+				val.append(x.copy()[int(ll * .8):, 0])
 			else:
-				train.append(x.copy()[:int(ll*.8),:])
-				val.append(x.copy()[int(ll*.8):,:])
-			#store to use in test for end
-			stored_trains[f]=x.copy()
-			
-		
-			
+				train.append(x.copy()[:int(ll * .8), :])
+				val.append(x.copy()[int(ll * .8):, :])
+			# store to use in test for end
+			stored_trains[f] = x.copy()
+
 	for f in os.listdir('2020data'):
 		if f.endswith('test.pkl'):
-			if not sub==99: 
-				if not f[:3]==subjects[sub]:
+			if not sub == 99:
+				if not f[:3] == subjects[sub]:
 					continue
-			a=joblib.load('2020data/'+f)
-			g=np.asarray(a['glucose'])
-			b=np.asarray(a['basal'])
-			d=np.asarray(a['dose'])
-			c=np.asarray(a['carbs'])
-			fing=np.asarray(a['finger'])
-			hr=np.asarray(a['hr'])
-			gsr=np.asarray(a['gsr'])
-			t=np.array(a.index.values)
-			miss2=(np.isnan(fing)).astype(float)
-			t1=np.sin( t*2*np.pi/288)
-			t2=np.cos(t *2*np.pi/288)
-			miss=(np.isnan(g)).astype(float)
-			x=np.stack((g,d,c,t1,t2,fing,miss),axis=1)
+			a = joblib.load('2020data/' + f)
+			g = np.asarray(a['glucose'])
+			b = np.asarray(a['basal'])
+			d = np.asarray(a['dose'])
+			c = np.asarray(a['carbs'])
+			fing = np.asarray(a['finger'])
+			hr = np.asarray(a['hr'])
+			gsr = np.asarray(a['gsr'])
 
-			#add in last training points so that we are predicting all points after
-			#the first hour of test data
-			t=stored_trains[f.replace('test','train')]
-			x=np.concatenate((t[-(totallength-12-1):,:],x),axis=0)
+			# Nawawy's start
+			post = np.asarray(a['postprandial'])
+			# Nawawy's end
+
+			t = np.array(a.index.values)
+			miss2 = (np.isnan(fing)).astype(float)
+			t1 = np.sin(t * 2 * np.pi / 288)
+			t2 = np.cos(t * 2 * np.pi / 288)
+			miss = (np.isnan(g)).astype(float)
+
+			# Nawawy's start
+			x = np.stack((g, d, c, t1, t2, fing, miss, post), axis=1)
+			# Nawawy's end
+
+			# add in last training points so that we are predicting all points after
+			# the first hour of test data
+			t = stored_trains[f.replace('test', 'train')]
+			x = np.concatenate((t[-(totallength - 12 - 1):, :], x), axis=0)
 			if not AVD:
-				test.append(x.copy()[:,0])
+				test.append(x.copy()[:, 0])
 			else:
 				test.append(x.copy())
-	
-	return train,val,test
+
+	return train, val, test
 
 
 
